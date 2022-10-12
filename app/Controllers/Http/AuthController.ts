@@ -1,4 +1,5 @@
 import { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
+import User from 'App/Models/User'
 import SocialAuth from 'App/Services/SocialAuth'
 
 export default class AuthController {
@@ -29,5 +30,9 @@ export default class AuthController {
 
       response.redirect().toPath('http://localhost:5173')
     })
+  }
+
+  public async logout({ auth }: HttpContextContract) {
+    return await auth.logout()
   }
 }
