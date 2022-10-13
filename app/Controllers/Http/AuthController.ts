@@ -22,14 +22,33 @@ export default class AuthController {
   }
 
   public async callback({ ally, auth, params, response }: HttpContextContract) {
-    const socialUser = await ally.use(params.provider).user()
+    try {
+      const provider = await ally.use(params.provider)
 
-    // @ts-ignore
-    await new SocialAuth(socialUser, params.provider).onFindOrCreate(async (user: User) => {
-      await auth.login(user)
+      if (provider.accessDenied()) {
+        return 'Access was denied'
+      }
 
-      response.redirect().toPath('http://localhost:5173')
-    })
+      if (provider.stateMisMatch()) {
+        return 'Request expired. Retry again'
+      }
+
+      if (provider.hasError()) {
+        return provider.getError()
+      }
+
+      const socialUser = await provider.user()
+
+      // @ts-ignore
+      await new SocialAuth(socialUser, params.provider).onFindOrCreate(async (user: User) => {
+        await auth.login(user)
+
+        response.redirect().toPath('http://localhost:5173')
+      })
+    } catch (err) {
+      console.error(err.response)
+      throw err
+    }
   }
 
   public async logout({ auth }: HttpContextContract) {
